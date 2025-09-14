@@ -1,0 +1,23 @@
+
+/* === public/style.css === */
+/* Basic styles (feel free to replace with Tailwind if you prefer) */
+body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:#f3f4f6; margin:0; }
+.container { max-width:720px; margin:40px auto; background:white; padding:20px; border-radius:8px; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
+header h1 { margin:0 0 12px 0; }
+label { display:block; margin-bottom:6px; }
+select, input { padding:8px; font-size:16px; }
+button { padding:8px 12px; font-size:16px; cursor:pointer; }
+.hidden { display:none; }
+.chat-header { display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:12px; }
+.messages { min-height:240px; border:1px solid #e5e7eb; padding:12px; border-radius:6px; overflow:auto; background:#fff; }
+.messages .msg { margin-bottom:8px; }
+.composer { display:flex; gap:8px; margin-top:10px; }
+.muted { color:#6b7280; margin-top:8px; }
+
+/* Simple bubble styles */
+.msg.you { text-align:right; }
+.msg.you .bubble { display:inline-block; background:#dcfce7; padding:8px 12px; border-radius:12px; }
+.msg.them .bubble { display:inline-block; background:#eef2ff; padding:8px 12px; border-radius:12px; }
+
+/* small screens */
+@media (max-width:600px){ .container{ margin:12px; padding:16px; } }
