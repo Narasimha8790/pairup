@@ -4,6 +4,13 @@ const socket = io();
 let currentRoom = null;
 let myUsername = null;
 
+// Active users display
+socket.on('activeUsers', (n) => {
+  const el = document.getElementById('activeUsers');
+  if (el) el.textContent = `🟢 Active: ${n}`;
+});
+
+
 const $start = document.getElementById('start');
 const $gender = document.getElementById('gender');
 const $join = document.getElementById('join');
