@@ -3,7 +3,9 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
+require('dotenv').config();
 const nodemailer = require('nodemailer');
+
 
 
 const app = express();
@@ -14,8 +16,8 @@ const io = new Server(server);
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'narasimha.golla1117@gmail.com',       // 👈 your Gmail
-    pass: 'knnu gner kdja vivt'     // 👈 16-char App Password
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_PASS     // 👈 16-char App Password
   }
 });
 
