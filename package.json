@@ -1,1 +1,1 @@
-{"name":"stranger-chat","version":"1.0.0","description":"Simple anonymous stranger chat pairing opposite genders","main":"server.js","scripts":{"start":"node server.js"},"dependencies":{"dotenv":"^17.2.3","express":"^4.18.2","nodemailer":"^7.0.10","socket.io":"^4.7.2"}}
+{"name":"stranger-chat","version":"1.0.0","description":"Simple anonymous stranger chat pairing opposite genders","main":"server.js","scripts":{"start":"node server.js"},"dependencies":{"@getbrevo/brevo":"^3.0.1","dotenv":"^17.2.3","express":"^4.18.2","nodemailer":"^7.0.10","socket.io":"^4.7.2"}}
