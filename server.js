@@ -1,82 +1,63 @@
-/* === server.js (modified) === */
+/* === server.js (Brevo API version) === */
 const express = require('express');
 const http = require('http');
 const path = require('path');
 const { Server } = require('socket.io');
 require('dotenv').config();
-const nodemailer = require('nodemailer');
+const Brevo = require('@getbrevo/brevo');   // ✅ use Brevo SDK (HTTP API, not SMTP)
 
-
+// ---- Brevo setup ----
+const brevo = new Brevo.TransactionalEmailsApi();
+brevo.authentications['apiKey'].apiKey = process.env.BREVO_API_KEY;
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// === Email Notification Setup ===
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  auth: {
-    user: process.env.BREVO_USER,
-    pass: process.env.BREVO_PASS
-  }
-});
-
-
-
+// ---- Email sending helper ----
 let lastEmailTime = 0;
 const EMAIL_COOLDOWN = 5 * 60 * 1000; // 5 minutes
 
-function sendEmail(subject, message) {
+async function sendEmail(subject, message) {
   const now = Date.now();
   if (now - lastEmailTime < EMAIL_COOLDOWN) return; // avoid spamming
   lastEmailTime = now;
 
-  const mailOptions = {
-    from: '"PairUp Bot" <narasimha.golla1117@gmail.com>',
-    to: 'gnarasimhayadav123@gmail.com', // 👈 or any recipient address
-    subject,
-    text: message
-  };
-
-  transporter.sendMail(mailOptions, (err, info) => {
-    if (err) console.error('❌ Email error:', err);
-    else console.log('✅ Email sent:', info.response);
-  });
+  try {
+    const data = await brevo.sendTransacEmail({
+      sender: { email: 'narasimha.golla1117@gmail.com', name: 'PairUp Bot' }, // must be a verified Brevo sender
+      to: [{ email: 'gnarasimhayadav123@gmail.com' }],
+      subject,
+      textContent: message
+    });
+    console.log('✅ Email sent via Brevo API:', data.messageId || '(queued)');
+  } catch (err) {
+    console.error('❌ Email error via Brevo API:', err.response?.body || err.message);
+  }
 }
 
-
-// Emit current active users count to all clients
+// ---- Emit current active users count ----
 function emitActive() {
   try {
     const count = io.of('/').sockets.size || 0;
     io.emit('activeUsers', count);
 
-    // Send email when threshold reached
-    const threshold = 1; // 👈 you can change this number
+    const threshold = 1; // 👈 change as needed
     if (count >= threshold) {
       sendEmail(
         `🔥 ${count} active users online on PairUp`,
         `There are currently ${count} users online — perfect time to chat!`
       );
     }
-
   } catch (e) {
     console.error('emitActive error', e);
   }
 }
 
-
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Waiting pools keyed by gender label (lowercase)
-const waiting = {
-  male: [],
-  female: [],
-  other: []
-};
-
-// Map socket.id -> partnerSocketId
+// ---- Matching logic (unchanged) ----
+const waiting = { male: [], female: [], other: [] };
 const partners = new Map();
 
 function normalizeGender(g) {
@@ -88,13 +69,9 @@ function normalizeGender(g) {
 }
 
 function findOppositeWaiting(gender) {
-  if (gender === 'male') {
-    if (waiting.female.length) return waiting.female.shift();
-  } else if (gender === 'female') {
-    if (waiting.male.length) return waiting.male.shift();
-  }
-  const options = Object.keys(waiting);
-  for (const k of options) {
+  if (gender === 'male' && waiting.female.length) return waiting.female.shift();
+  if (gender === 'female' && waiting.male.length) return waiting.male.shift();
+  for (const k of Object.keys(waiting)) {
     if (k !== gender && waiting[k].length) return waiting[k].shift();
   }
   return null;
@@ -103,7 +80,6 @@ function findOppositeWaiting(gender) {
 io.on('connection', (socket) => {
   console.log('conn', socket.id);
 
-  // update active users when a client connects
   emitActive();
 
   socket.on('findPartner', ({ gender }) => {
@@ -116,10 +92,8 @@ io.on('connection', (socket) => {
       const room = socket.id + '#' + partner.id;
       partners.set(socket.id, partner.id);
       partners.set(partner.id, socket.id);
-
       socket.join(room);
       partner.join(room);
-
       socket.emit('chatStart', { room, username: socket.data.username, partnerUsername: partner.data.username, partnerGender: partner.data.gender });
       partner.emit('chatStart', { room, username: partner.data.username, partnerUsername: socket.data.username, partnerGender: socket.data.gender });
     } else {
@@ -183,7 +157,6 @@ io.on('connection', (socket) => {
       partners.delete(socket.id);
     }
 
-    // update active users after a client disconnects
     emitActive();
   });
 });
