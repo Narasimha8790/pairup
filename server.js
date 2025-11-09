@@ -14,12 +14,15 @@ const io = new Server(server);
 
 // === Email Notification Setup ===
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp-relay.brevo.com',
+  port: 587,
   auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS     // 👈 16-char App Password
+    user: process.env.BREVO_USER,
+    pass: process.env.BREVO_PASS
   }
 });
+
+
 
 let lastEmailTime = 0;
 const EMAIL_COOLDOWN = 5 * 60 * 1000; // 5 minutes
