@@ -1,4 +1,3 @@
-
 /* === public/client.js === */
 const socket = io();
 let currentRoom = null;
@@ -9,7 +8,6 @@ socket.on('activeUsers', (n) => {
   const el = document.getElementById('activeUsers');
   if (el) el.textContent = `🟢 Active: ${n}`;
 });
-
 
 const $start = document.getElementById('start');
 const $gender = document.getElementById('gender');
@@ -25,23 +23,24 @@ const $partnerGender = document.getElementById('partnerGender');
 const $skip = document.getElementById('skip');
 const $typing = document.getElementById('typing');
 const $leaveBtn = document.getElementById('leaveBtn');
-// const $input = document.getElementById('msg');
+
 let typing = false;
 let typingTimeout;
 
 $leaveBtn.addEventListener('click', () => {
   if (confirm('Do you want to leave the chat?')) {
     socket.disconnect();
-    location.reload(); // reload brings back to first page
+    location.reload();
   }
 });
-
 
 $start.onclick = () => {
   const gender = $gender.value;
   socket.emit('findPartner', { gender });
   $status.textContent = 'Searching for a partner...';
 };
+
+let noteShown = false;
 
 socket.on('waiting', () => {
   $status.textContent = 'Waiting for someone of a different gender...';
@@ -50,6 +49,20 @@ socket.on('waiting', () => {
   $messages.innerHTML = '';
   $partnerName.textContent = '—';
   $partnerGender.textContent = '—';
+
+  // 💌 Personalized message for Khushi
+  if (!noteShown) {
+    const note = document.createElement('div');
+    note.className = "text-center text-yellow-400 text-sm mt-2 italic leading-relaxed";
+    note.innerHTML = `
+      Hey <b>Khushi</b>, are you waiting for me to join? 💬<br/>
+      I just got a notification that you’re here, so please wait a few minutes — I might join soon <br/>
+      <span class="text-gray-500 text-xs">(If you’re not Khushi, please ignore this message ☺️)</span>
+    `;
+    $messages.appendChild(note);
+    $messages.scrollTop = $messages.scrollHeight;
+    noteShown = true;
+  }
 });
 
 socket.on('chatStart', (data) => {
@@ -65,6 +78,7 @@ socket.on('chatStart', (data) => {
 });
 
 $send.onclick = sendMessage;
+
 $msg.addEventListener('input', () => {
   if (!typing) {
     typing = true;
@@ -75,7 +89,7 @@ $msg.addEventListener('input', () => {
   typingTimeout = setTimeout(() => {
     typing = false;
     socket.emit('typing', { room: currentRoom, typing: false });
-  }, 1000); // stop typing after 1 sec of inactivity
+  }, 1000);
 });
 
 $msg.addEventListener('keydown', (e) => {
@@ -95,14 +109,12 @@ function sendMessage() {
 }
 
 socket.on('message', (data) => {
-  // show incoming
-  if (data.user === myUsername) return; // already shown locally
+  if (data.user === myUsername) return;
   appendMessage('them', data.msg, data.user);
 });
 
 socket.on('typing', ({ user, typing }) => {
-  if (typing) $typing.textContent = `${user} is typing...`;
-  else $typing.textContent = '';
+  $typing.textContent = typing ? `${user} is typing...` : '';
 });
 
 socket.on('partnerLeft', () => {
@@ -112,13 +124,12 @@ socket.on('partnerLeft', () => {
 });
 
 $skip.onclick = () => {
-    if (confirm('Are you sure you want to skip this chat?')) {
+  if (confirm('Are you sure you want to skip this chat?')) {
     socket.emit('next');
     $messages.innerHTML = '';
   }
   if (currentRoom) socket.emit('skip', { room: currentRoom });
   else {
-    // if not in room, just try to find partner again
     const gender = $gender.value;
     socket.emit('findPartner', { gender });
   }
@@ -131,19 +142,15 @@ $skip.onclick = () => {
 function appendMessage(cls, text, who) {
   const div = document.createElement('div');
   div.className = 'flex items-baseline';
-
   const isMe = cls === 'you';
   const name = isMe ? 'Me' : (who || 'Stranger');
-
   div.innerHTML = `
     <span class="font-semibold ${isMe ? 'text-green-400' : 'text-blue-400'} mr-2">${name}:</span>
     <span class="text-gray-200">${text}</span>
   `;
-
   $messages.appendChild(div);
   $messages.scrollTop = $messages.scrollHeight;
 }
-
 
 function appendSystem(text) {
   const div = document.createElement('div');
